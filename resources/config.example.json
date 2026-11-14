@@ -1,0 +1,9 @@
+{
+  "provider": "volcengine",
+  "url": "https://openspeech.bytedance.com/api/v3/auc/bigmodel/recognize/flash",
+  "api_key": "",
+  "resource_id": "volc.bigasr.auc_turbo",
+  "model_name": "bigmodel",
+  "timeout": 180,
+  "output_dir": "C:\\Users\\YOUR_NAME\\Downloads\\NetworkASR"
+}

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline' 'unsafe-eval'; img-src data:; connect-src 'none'"
+    />
+    <title>网络ASR</title>
+    <style>
+      /*__CSS__*/
+    </style>
+  </head>
+  <body>
+    <svg style="display: none" aria-hidden="true">
+      <defs>
+        <symbol id="arrow" viewBox="0 0 24 24">
+          <path
+            d="M4 12h15m-6-6 6 6-6 6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </symbol>
+      </defs>
+    </svg>
+    <aside class="sidebar">
+      <a class="brand" href="#start" aria-label="网络ASR首页"
+        ><img
+          class="brand-icon"
+          src="data:image/png;base64,__APP_ICON__"
+          alt=""
+        />网络ASR</a
+      >
+      <nav aria-label="主导航">
+        <button class="nav active" data-page="start" aria-current="page">
+          开始转写</button
+        ><button class="nav" data-page="history">转写记录</button
+        ><button class="nav" data-page="settings">设置</button>
+      </nav>
+    </aside>
+    <main>
+      <header class="topline">
+        <h1>网络ASR</h1>
+        <span id="breadcrumb">开始转写</span>
+      </header>
+      <section id="page-start" class="page">
+        <div class="workspace-grid">
+          <div class="input-panel">
+            <div class="section-line"><h2>选择素材</h2></div>
+            <div class="source-tabs" role="tablist" aria-label="素材来源">
+              <button
+                id="tab-local"
+                role="tab"
+                aria-selected="true"
+                aria-controls="local-panel"
+                class="selected"
+              >
+                本地音视频</button
+              ><button
+                id="tab-douyin"
+                role="tab"
+                aria-selected="false"
+                aria-controls="douyin-panel"
+                tabindex="-1"
+              >
+                抖音分享链接
+              </button>
+            </div>
+            <div id="local-panel" role="tabpanel" aria-labelledby="tab-local">
+              <button class="upload-zone" id="choose-file">
+                <span class="upload-icon" aria-hidden="true">↑</span
+                ><strong id="file-name">选择音频或视频文件</strong
+                ><span id="file-hint">支持 MP4、MOV、MKV、MP3、WAV 等格式</span
+                ><span class="upload-pick">选择文件</span>
+              </button>
+            </div>
+            <div
+              id="douyin-panel"
+              role="tabpanel"
+              aria-labelledby="tab-douyin"
+              hidden
+            >
+              <label for="share">抖音链接或分享文案</label
+              ><textarea
+                id="share"
+                rows="5"
+                placeholder="粘贴抖音链接或完整分享文案"
+              ></textarea>
+            </div>
+            <div class="output-row">
+              <label for="output">输出目录</label>
+              <div class="input-action">
+                <input
+                  id="output"
+                  type="text"
+                  placeholder="请选择输出目录"
+                /><button id="choose-output" aria-label="选择输出目录">
+                  更改 ↗
+                </button>
+              </div>
+            </div>
+            <div class="start-row">
+              <button class="button primary" id="start-task">
+                开始转写 <svg aria-hidden="true"><use href="#arrow" /></svg>
+              </button>
+            </div>
+            <p id="start-error" role="alert" class="error" hidden></p>
+          </div>
+        </div>
+        <section class="recent-section">
+          <div class="section-line">
+            <h2>最近记录</h2>
+            <button class="text-button" id="all-history">查看全部 ↗</button>
+          </div>
+          <div id="recent-list" class="recent-list">
+            <div class="empty-inline">暂无记录</div>
+          </div>
+        </section>
+      </section>
+      <section id="page-history" class="page" hidden>
+        <div class="history-toolbar">
+          <h2>转写记录</h2>
+          <span id="history-count">0 条记录</span>
+        </div>
+        <div class="history-layout">
+          <div class="record-column">
+            <label class="sr-only" for="search">搜索记录</label
+            ><input
+              id="search"
+              class="search"
+              type="search"
+              placeholder="搜索文件名或标题…"
+            />
+            <div class="filter-row" role="group" aria-label="筛选处理状态">
+              <button data-filter="ALL" class="selected">全部</button
+              ><button data-filter="RUNNING">处理中</button
+              ><button data-filter="SUCCESS">已完成</button
+              ><button data-filter="FAIL">未完成</button>
+            </div>
+            <div id="record-list"></div>
+          </div>
+          <article class="transcript-panel" id="detail-panel">
+            <div class="empty-detail">
+              <h2>文字稿</h2>
+              <p>选择左侧记录查看</p>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section id="page-settings" class="page" hidden>
+        <form id="settings-form" class="settings-layout">
+          <div class="settings-main">
+            <div class="section-line">
+              <h2>语音识别服务</h2>
+              <span class="badge">火山引擎 · Flash</span>
+            </div>
+            <label for="setting-url">API 地址</label
+            ><input
+              id="setting-url"
+              type="url"
+              required
+              spellcheck="false"
+            /><label for="setting-key"
+              >API Key <small id="key-status"></small
+            ></label>
+            <div class="input-action">
+              <input
+                id="setting-key"
+                type="password"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="输入你的 API Key"
+              /><button type="button" id="toggle-key" aria-pressed="false">
+                显示
+              </button>
+            </div>
+            <p class="field-help">密钥留空时保留已保存的值。</p>
+            <div class="two-fields">
+              <div>
+                <label for="setting-resource">资源 ID</label
+                ><input id="setting-resource" required />
+              </div>
+              <div>
+                <label for="setting-model">模型名称</label
+                ><input id="setting-model" required />
+              </div>
+            </div>
+            <div class="two-fields">
+              <div>
+                <label for="setting-timeout">超时（秒）</label
+                ><input
+                  id="setting-timeout"
+                  type="number"
+                  min="1"
+                  max="3600"
+                  required
+                />
+              </div>
+              <div>
+                <label for="setting-output">默认输出目录</label>
+                <div class="input-action">
+                  <input id="setting-output" required /><button
+                    type="button"
+                    id="setting-folder"
+                  >
+                    选择
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p id="settings-error" class="error" role="alert" hidden></p>
+            <div class="settings-actions">
+              <button class="button primary" type="submit">保存配置</button
+              ><span>仅检查配置，不调用识别接口。</span>
+            </div>
+            <details class="diagnostics">
+              <summary>数据目录</summary>
+              <code id="data-dir"></code>
+            </details>
+          </div>
+        </form>
+      </section>
+    </main>
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+    <dialog id="confirm-dialog">
+      <form method="dialog">
+        <h2 id="dialog-title"></h2>
+        <p id="dialog-message"></p>
+        <div class="dialog-buttons">
+          <button class="button" value="cancel">取消</button
+          ><button class="button primary" id="dialog-confirm" value="confirm">
+            确认
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <script>
+      /*__JS__*/
+    </script>
+  </body>
+</html>
