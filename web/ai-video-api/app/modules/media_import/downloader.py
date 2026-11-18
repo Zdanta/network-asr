@@ -28,6 +28,7 @@ DOUYIN_MOBILE_USER_AGENT = (
     "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) "
     "AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1"
 )
+_DOUYIN_SHARE_PAGE_ATTEMPTS = 4
 
 
 @dataclass(frozen=True)
@@ -81,11 +82,24 @@ class PlaywrightMediaDownloader:
                 raise AppException(code=4004, message="没有从抖音链接中识别到视频编号", status_code=404)
 
             share_url = f"https://www.iesdouyin.com/share/video/{item_id}/"
-            share_response = client.get(share_url)
-            share_response.raise_for_status()
-            payload = _decode_router_data(share_response.text)
+            # 分享页只有在请求带上抖音自身下发的匿名 ttwid 后才在 SSR 中返回 videoInfoRes；
+            # 首次请求通常只拿到 Cookie，需在同一会话内有限次重取，直到出现目标视频对象。
+            target = None
+            for attempt in range(_DOUYIN_SHARE_PAGE_ATTEMPTS):
+                share_response = client.get(share_url)
+                share_response.raise_for_status()
+                payload = _decode_router_data(share_response.text)
+                target = _find_douyin_video(payload, item_id)
+                if target is not None:
+                    break
+                logger.info(
+                    "douyin share page has no target data yet, jobId=%s, itemId=%s, attempt=%s, hasCookie=%s",
+                    job_id,
+                    item_id,
+                    attempt + 1,
+                    bool(client.cookies.get("ttwid")),
+                )
 
-        target = _find_douyin_video(payload, item_id)
         title = _payload_title([target]) if target else None
         candidates = _douyin_media_candidates([payload], item_id)
         if not candidates:
