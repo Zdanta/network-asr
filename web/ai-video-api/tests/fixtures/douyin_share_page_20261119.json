@@ -1,0 +1,60 @@
+{
+ "_note": "脱敏夹具：2026-11-19 真实 iesdouyin 分享页 window._ROUTER_DATA 结构。without_ttwid=首个无 Cookie 请求（无 videoInfoRes），with_ttwid=带匿名 ttwid 后的请求。仅保留解析所需字段，去除签名/作者/统计/UA/webId。",
+ "without_ttwid": {
+  "loaderData": {
+   "video_layout": null,
+   "video_(id)/page": {
+    "itemId": "7700971454229216463",
+    "lastPath": "7700971454229216463",
+    "renderInSSR": 1,
+    "isSpider": false,
+    "host": "www.iesdouyin.com",
+    "appName": "safari"
+   }
+  },
+  "errors": null
+ },
+ "with_ttwid": {
+  "loaderData": {
+   "video_layout": null,
+   "video_(id)/page": {
+    "itemId": "7700971454229216463",
+    "lastPath": "7700971454229216463",
+    "renderInSSR": 1,
+    "isSpider": false,
+    "host": "www.iesdouyin.com",
+    "appName": "safari",
+    "videoInfoRes": {
+     "status_code": 0,
+     "filter_list": [],
+     "is_oversea": 0,
+     "item_list": [
+      {
+       "aweme_id": "7700971454229216463",
+       "aweme_type": 4,
+       "desc": "把codex剪辑的Skill全部删掉！ Capcut官宣全面接入chatgpt@剪映 #capcut #chatgpt #codex #ai剪辑 #自动剪辑",
+       "video": {
+        "play_addr": {
+         "uri": "v0d00fg10000dbflg87og65s16esn0p0",
+         "url_list": [
+          "https://aweme.snssdk.com/aweme/v1/playwm/?video_id=v0d00fg10000dbflg87og65s16esn0p0&ratio=720p&line=0"
+         ]
+        },
+        "duration": 70845,
+        "width": 1080,
+        "height": 1920,
+        "bit_rate": []
+       },
+       "music": {
+        "mid": "0",
+        "title": "sanitized",
+        "duration": 70
+       }
+      }
+     ]
+    }
+   }
+  },
+  "errors": null
+ }
+}

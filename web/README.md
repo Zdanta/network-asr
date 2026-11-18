@@ -6,7 +6,7 @@
 
 web-v2026.11.19.1 修正抖音导入误选整页媒体的缺陷：分享页与浏览器都只使用目标视频编号匹配的结构化 video 数据。无法验证则导入失败，在创建 ASR 任务前停止，不调用 ASR、不扣费。配套音频限定同一视频。
 
-当前实际问题链接没有返回目标视频数据，尚未验证该链接可恢复成功下载。平台风控、私密、失效或无目标数据时仍可能失败。
+2026-11-19 后续修复：抖音分享页 SSR 只有在请求带上抖音下发的匿名 ttwid Cookie 后才返回 videoInfoRes，旧代码每次新建无 Cookie 会话只请求一次，因此拿不到目标数据。现于同一会话内最多请求 4 次分享页，找到目标编号对象才下载，校验规则不变。问题链接已在生产环境真实下载核验：文件 MD5 与抖音 aweme/detail 中对应档位 file_hash 一致。服务器上的浏览器兜底会被抖音风控组件拦截（不发出详情请求），分享页失败时仍会安全失败；私密、失效或无目标数据时同样失败。
 
 ## 目录与运行
 
@@ -26,6 +26,6 @@ Docker：在本目录复制 .env.example 为 .env 并配置生产参数，使用
 
 API Key 仅放服务端，opcpay 使用 opcpay_api_key。模板没有真实凭据。不要提交 .env、用户媒体、日志或数据库备份。
 
-后端：python -m unittest discover -s tests（在 ai-video-api 执行）。本地 81 项：71 通过，10 项专用数据库测试跳过。媒体下载 13 项全通过。前端 npm run build、npm run lint 通过。测试不执行真实支付、ASR 或 SMTP 发信。
+后端：python -m unittest discover -s tests（在 ai-video-api 执行）。本地 85 项：75 通过，10 项专用数据库测试跳过。媒体下载 17 项全通过（含真实分享页结构脱敏夹具）。前端 npm run build、npm run lint 通过。测试不执行真实支付、ASR 或 SMTP 发信。
 
 发布包含源码、环境模板及前端 dist；不是 Windows 便携 EXE，也不含 Python/Node/Docker 镜像、MySQL、媒体文件或凭据。依赖版本以 requirements.txt 和 package-lock.json 为准。

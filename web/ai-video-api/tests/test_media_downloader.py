@@ -1,10 +1,12 @@
 import json
 import unittest
 from itertools import count
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from app.modules.media_import.downloader import (
+    _DOUYIN_SHARE_PAGE_ATTEMPTS,
     PlaywrightMediaDownloader,
     _douyin_media_candidates,
     _find_douyin_video,
@@ -192,6 +194,72 @@ class MediaDownloaderTest(unittest.TestCase):
             with self.assertRaisesRegex(Exception, "没有可下载的视频"):
                 downloader._download_from_douyin_share_page("https://www.douyin.com/video/123", "test", "123")
             download.assert_not_called()
+
+
+FIXTURE_PATH = Path(__file__).parent / "fixtures" / "douyin_share_page_20261119.json"
+REAL_ITEM_ID = "7700971454229216463"
+
+
+def _router_html(payload) -> str:
+    return "<script>window._ROUTER_DATA = " + json.dumps(payload, ensure_ascii=False) + "</script>"
+
+
+def _share_client(*payloads):
+    client = MagicMock()
+    session = client.__enter__.return_value
+    session.get.side_effect = [SimpleNamespace(text=_router_html(p), url="", raise_for_status=lambda: None)
+                               for p in payloads]
+    return client, session
+
+
+class DouyinShareFixtureTest(unittest.TestCase):
+    """基于 2026-11-19 真实分享页结构的脱敏夹具。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.fixture = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+
+    def test_first_response_without_ttwid_has_no_target(self):
+        self.assertIsNone(_find_douyin_video(self.fixture["without_ttwid"], REAL_ITEM_ID))
+
+    def test_share_page_retries_in_same_session_until_target_appears(self):
+        client, session = _share_client(self.fixture["without_ttwid"], self.fixture["with_ttwid"])
+        downloader = PlaywrightMediaDownloader()
+        with patch("app.modules.media_import.downloader.httpx.Client", return_value=client), \
+             patch.object(downloader, "_download_direct", return_value="verified") as download:
+            self.assertEqual(downloader._download_from_douyin_share_page(
+                "https://v.douyin.com/example/", "test", REAL_ITEM_ID), "verified")
+        self.assertEqual(session.get.call_count, 2)
+        self.assertEqual(download.call_args.args[0],
+                         "https://aweme.snssdk.com/aweme/v1/play/?video_id=v0d00fg10000dbflg87og65s16esn0p0&ratio=720p&line=0")
+        self.assertTrue(download.call_args.args[3].startswith("把codex剪辑的Skill全部删掉"))
+
+    def test_share_page_retries_are_bounded_and_fail_safely(self):
+        payloads = [self.fixture["without_ttwid"]] * _DOUYIN_SHARE_PAGE_ATTEMPTS
+        client, session = _share_client(*payloads)
+        downloader = PlaywrightMediaDownloader()
+        with patch("app.modules.media_import.downloader.httpx.Client", return_value=client), \
+             patch.object(downloader, "_download_direct") as download:
+            with self.assertRaisesRegex(Exception, "没有可下载的视频"):
+                downloader._download_from_douyin_share_page("https://v.douyin.com/example/", "test", REAL_ITEM_ID)
+        self.assertEqual(session.get.call_count, _DOUYIN_SHARE_PAGE_ATTEMPTS)
+        download.assert_not_called()
+
+    def test_real_structure_with_decoys_still_selects_target(self):
+        payload = json.loads(json.dumps(self.fixture["with_ttwid"]))
+        page = payload["loaderData"]["video_(id)/page"]
+        items = page["videoInfoRes"]["item_list"]
+        items[0]["music"]["play_url"] = {"url_list": ["https://sf3-cdn-tos.douyinstatic.com/obj/ies-music/bgm.mp3"]}
+        items.insert(0, {"aweme_id": "7676834838926890405", "video": {"play_addr": {"url_list": [
+            "https://aweme.snssdk.com/aweme/v1/playwm/?video_id=recommended&ratio=720p&line=0"]}}})
+        page["playerDemo"] = "https://lf6-effectcdn-tos.byteeffecttos.com/obj/ies.fe.effect/73a925431aac3cf511e0fb73158c9be8.mp4"
+        candidates = _douyin_media_candidates([payload], REAL_ITEM_ID)
+        self.assertEqual(candidates[0],
+                         "https://aweme.snssdk.com/aweme/v1/play/?video_id=v0d00fg10000dbflg87og65s16esn0p0&ratio=720p&line=0")
+        self.assertTrue(all("v0d00fg10000dbflg87og65s16esn0p0" in url for url in candidates))
+        self.assertEqual(_douyin_media_candidates([payload], "7676834838926890405"),
+                         ["https://aweme.snssdk.com/aweme/v1/play/?video_id=recommended&ratio=720p&line=0",
+                          "https://aweme.snssdk.com/aweme/v1/playwm/?video_id=recommended&ratio=720p&line=0"])
 
 
 if __name__ == "__main__":
