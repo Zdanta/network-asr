@@ -1,0 +1,40 @@
+services:
+  api:
+    build:
+      context: ./ai-video-api
+    container_name: ai-video-api
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      APP_ENV: production
+      TZ: Asia/Shanghai
+      DATABASE_URL: ${DATABASE_URL}
+      STORAGE_ROOT: /app/storage
+      FFMPEG_COMMAND: ffmpeg
+      FFPROBE_COMMAND: ffprobe
+      PLAYWRIGHT_HEADLESS: "true"
+      PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: /usr/bin/chromium
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    volumes:
+      - ./storage:/app/storage
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/system/health', timeout=5).read()\""]
+      interval: 20s
+      timeout: 8s
+      retries: 10
+      start_period: 30s
+
+  web:
+    build:
+      context: ./ai-video-web-react
+    container_name: ai-video-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-80}:80"

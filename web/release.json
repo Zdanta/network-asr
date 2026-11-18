@@ -1,0 +1,6 @@
+{
+  "tag": "web-v2026.11.19.1",
+  "productionBackend": "20261119-024018",
+  "component": "FastAPI + React Web",
+  "databaseMigration": false
+}

@@ -1,0 +1,51 @@
+name: Web release
+on:
+  push:
+    branches: [main]
+    paths: [web/release.json]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: web-release
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/ai-video-web-react/package-lock.json
+      - name: Backend tests
+        working-directory: web/ai-video-api
+        run: |
+          python -m pip install -r requirements.txt
+          python -m unittest discover -s tests -v
+      - name: Frontend checks
+        working-directory: web/ai-video-web-react
+        run: |
+          npm ci
+          npm run build
+          npm run lint
+      - name: Package web deployment
+        run: python web/scripts/package_release.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: network-asr-web-deploy
+          path: release-web/*
+      - name: Publish web release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=$(python -c "import json; print(json.load(open('web/release.json'))['tag'])")
+          if gh release view "$tag" > /dev/null 2>&1; then
+            echo 'Release already exists; preserving existing assets.'
+            exit 0
+          fi
+          gh release create "$tag" release-web/*.zip release-web/SHA256SUMS.txt --target "$GITHUB_SHA" --title "网络ASR Web $tag" --notes-file web/RELEASE_NOTES.md --latest=false
