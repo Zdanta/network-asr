@@ -1,5 +1,7 @@
 # 网络ASR
 
+> Web 网站版本：[源码与部署说明](web/README.md) · [Web Release 部署包](https://github.com/Zdanta/network-asr/releases/tag/web-v2026.11.19.1)。下方介绍的是 Windows 桌面版。
+
 我做这个工具，是想把音视频转文字这件事放回桌面上：选文件、贴链接、看文字稿，不需要再部署一套网站。
 
 它负责整理素材、提取音频和保存记录，识别交给你自己的火山引擎账号。目前只接入火山 Flash 协议，软件本身没有账号、积分或充值功能。
